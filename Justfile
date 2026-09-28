@@ -21,3 +21,6 @@ test-kunit:
 
 test-userspace:
     cargo run -r -- --init /bin/usertest
+
+verify:
+    ./scripts/verify_toolchain.sh

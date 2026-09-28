@@ -143,6 +143,10 @@ fn arch_init_stage2(frame: *mut ExceptionState) -> *mut ExceptionState {
 
     boot_secondaries();
 
+    log::info!("===============================");
+    log::info!("{}", env!("MOSS_BOOT_BANNER"));
+    log::info!("===============================");
+
     // Prove that we can send IPIs through the messenger.
     frame
 }
@@ -185,3 +189,4 @@ pub extern "C" fn park_cpu() -> ! {
         asm::wfe();
     }
 }
+
