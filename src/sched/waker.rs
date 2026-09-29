@@ -29,7 +29,7 @@ unsafe fn wake_waker(data: *const ()) {
             TaskState::Sleeping | TaskState::Stopped => {
                 if locus == CpuId::this() {
                     *state = TaskState::Runnable;
-                    SCHED_STATE.borrow_mut().wakeup(desc);
+                    super::wakeup_task(desc);
                 } else {
                     message_cpu(locus, Message::WakeupTask(create_waker(desc)))
                         .expect("Could not wakeup task on other CPU");

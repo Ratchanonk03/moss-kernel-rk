@@ -48,6 +48,7 @@ time = { version = "0.3.47", features = ["formatting", "macros"] } # For build t
 default = ["smp"]
 # Support for Symmetric Multiprocessing
 smp = []
+sched-rr = []
 
 [profile.release]
 strip = true

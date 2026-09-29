@@ -25,6 +25,9 @@ pub mod sched_task;
 pub mod uspc_ret;
 pub mod waker;
 
+#[cfg(feature = "sched-rr")]
+mod sched_rr;
+
 pub static NUM_CONTEXT_SWITCHES: AtomicUsize = AtomicUsize::new(0);
 
 #[derive(Debug, Default)]
@@ -110,16 +113,32 @@ pub const SCHED_WEIGHT_BASE: i32 = 1024;
 /// Nothing, but the CPU context will be set to the next runnable task. See
 /// `userspace_return` for how this is invoked.
 fn schedule() {
-    // Reentrancy Check
-    if SCHED_STATE.try_borrow_mut().is_none() {
-        warn!(
-            "Scheduler reentrancy detected on CPU {}",
-            CpuId::this().value()
-        );
-        return;
+    #[cfg(feature = "sched-rr")]
+    {
+        if sched_rr::RR_STATE.try_borrow_mut().is_none() {
+            warn!(
+                "Scheduler reentrancy detected on CPU {}",
+                CpuId::this().value()
+            );
+            return;
+        }
+
+        sched_rr::RR_STATE.borrow_mut().do_schedule();
     }
 
-    SCHED_STATE.borrow_mut().do_schedule();
+    #[cfg(not(feature = "sched-rr"))]
+    {
+        // Reentrancy Check
+        if SCHED_STATE.try_borrow_mut().is_none() {
+            warn!(
+                "Scheduler reentrancy detected on CPU {}",
+                CpuId::this().value()
+            );
+            return;
+        }
+        SCHED_STATE.borrow_mut().do_schedule();
+    }
+
 }
 
 pub fn spawn_kernel_work(fut: impl Future<Output = ()> + 'static + Send) {
@@ -144,9 +163,29 @@ fn get_best_cpu() -> CpuId {
 
 /// Insert the given task onto a CPU's run queue.
 pub fn insert_task(task: Box<OwnedTask>) {
-    SCHED_STATE
-        .borrow_mut()
-        .insert_into_runq(SchedulableTask::new(task));
+    #[cfg(feature = "sched-rr")]
+    {
+        sched_rr::RR_STATE.borrow_mut().add_task(task);
+    }
+
+    #[cfg(not(feature = "sched-rr"))]
+    {
+        SCHED_STATE
+            .borrow_mut()
+            .insert_into_runq(SchedulableTask::new(task));
+    }
+}
+
+pub(super) fn wakeup_task(desc: TaskDescriptor) {
+    #[cfg(feature = "sched-rr")]
+    {
+        sched_rr::RR_STATE.borrow_mut().wakeup(desc);
+    }
+
+    #[cfg(not(feature = "sched-rr"))]
+    {
+        SCHED_STATE.borrow_mut().wakeup(desc);
+    }
 }
 
 #[cfg(feature = "smp")]
@@ -392,13 +431,22 @@ pub fn sched_init() {
 
 pub fn sched_init_secondary() {
     let idle_task = ArchImpl::create_idle_task();
-
     insert_task(Box::new(idle_task));
-    // Force update_global_least_tasked_cpu_info
+
+    #[cfg(not(feature = "sched-rr"))]
     SCHED_STATE.borrow().update_global_least_tasked_cpu_info();
 }
 
 pub fn sys_sched_yield() -> Result<usize> {
-    schedule();
-    Ok(0)
+    #[cfg(feature = "sched-rr")]
+    {
+        sched_rr::RR_STATE.borrow_mut().yield_current();
+        Ok(0)
+    }
+
+    #[cfg(not(feature = "sched-rr"))]
+    {
+        schedule();
+        Ok(0)
+    }
 }
