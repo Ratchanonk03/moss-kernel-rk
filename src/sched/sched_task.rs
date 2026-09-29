@@ -6,7 +6,7 @@ use core::{
 use alloc::boxed::Box;
 
 use crate::{
-    drivers::timer::{Instant, schedule_preempt},
+    drivers::timer::{Instant, schedule_preempt, now},
     kernel::cpu_id::CpuId,
     process::{TaskState, owned::OwnedTask},
 };
@@ -23,6 +23,8 @@ pub struct SchedulableTask {
     pub exec_start: Option<Instant>,
     pub deadline: Option<Instant>,
     pub last_run: Option<Instant>,
+    pub created_at: Instant,
+    pub ready_since: Instant,
 }
 
 impl Deref for SchedulableTask {
@@ -41,6 +43,8 @@ impl DerefMut for SchedulableTask {
 
 impl SchedulableTask {
     pub fn new(task: Box<OwnedTask>) -> Box<Self> {
+        let current_time = now().expect("Failed to get current time");
+
         Box::new(Self {
             task,
             v_runtime: 0,
@@ -49,6 +53,8 @@ impl SchedulableTask {
             exec_start: None,
             deadline: None,
             last_run: None,
+            created_at: current_time,
+            ready_since: current_time,
         })
     }
 
@@ -125,7 +131,8 @@ impl SchedulableTask {
 
     /// Update accounting information when the task is about to be inserted into
     /// a runqueue.
-    pub fn inserting_into_runqueue(&mut self, vclock: u128) {
+    pub fn inserting_into_runqueue(&mut self, vclock: u128, now: Instant) {
+        self.ready_since = now;
         // A freshly enqueued task becomes eligible immediately.
         self.v_eligible = vclock;
 

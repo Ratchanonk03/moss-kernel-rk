@@ -19,11 +19,14 @@ use log::warn;
 use runqueue::{RunQueue, SwitchResult};
 use sched_task::SchedulableTask;
 
+use stats::SchedulerStats;
+
 pub mod current;
 mod runqueue;
 pub mod sched_task;
 pub mod uspc_ret;
 pub mod waker;
+mod stats;
 
 #[cfg(feature = "sched-rr")]
 mod sched_rr;
@@ -213,6 +216,7 @@ pub struct SchedState {
     last_update: Option<Instant>,
     /// Force a reschedule.
     force_resched: bool,
+    stats: SchedulerStats,
 }
 
 unsafe impl Send for SchedState {}
@@ -225,6 +229,7 @@ impl SchedState {
             vclock: 0,
             last_update: None,
             force_resched: false,
+            stats: SchedulerStats::new(),
         }
     }
 
@@ -306,7 +311,7 @@ impl SchedState {
 
         self.advance_vclock(now);
 
-        new_task.inserting_into_runqueue(self.vclock);
+        new_task.inserting_into_runqueue(self.vclock, now);
 
         if let Some(current) = self.run_q.current() {
             // We force a reschedule if:
@@ -384,7 +389,12 @@ impl SchedState {
             SwitchResult::Blocked { old_task } => {
                 // If the blocked task has finished, allow it to drop here so it's
                 // resources are released.
-                if !old_task.state.lock_save_irq().is_finished() {
+                if old_task.state.lock_save_irq().is_finished() {
+                    if !old_task.is_idle_task() {
+                        self.stats.task_finished(now_inst, old_task.created_at);
+                        self.stats.log_stats("EEVDF", None);
+                    }
+                } else {
                     self.wait_q.insert(old_task.descriptor(), old_task);
                 }
             }
@@ -394,6 +404,11 @@ impl SchedState {
 
         // Update all context since the task has switched.
         if let Some(new_current) = self.run_q.current_mut() {
+            if !new_current.is_idle_task() {
+                self.stats
+                    .task_selected(now_inst, new_current.ready_since);
+            }
+
             NUM_CONTEXT_SWITCHES.fetch_add(1, Ordering::Relaxed);
             ArchImpl::context_switch(new_current.t_shared.clone());
             let now = now().unwrap();
