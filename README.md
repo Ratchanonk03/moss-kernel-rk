@@ -1,5 +1,8 @@
 # Assessment
 
+## Level 1
+
+## Level 2
 
 ## Level 3
 
@@ -7,23 +10,25 @@
 1. The dmesg program places the syscall number in ARM64 register `x8`, i.e. `0x74`,  and its arguments in `x0`–`x2`.
 2. Moss’s syscall handler reads these registers and call the matching arm which is `sys_syslog(type, buf, len)`.
 3. `sys_syslog` validate type using `match`, if it dose not match any returns `KernelError::InvalidValue`.
-    1. type 3: 
-          1. 3.1.1 Acquire the lock to read from global `LOG`.
-          2. 3.1.2 Calculate the size to write using `min(len, log.len())`.
-          3. 3.1.3 Write to user buffer using `copy_to_user_slice`.
-          4. 3.1.4 Return the written size.
-    2. Type 5: Acquire the lock and set `LOG` to `None`. 
-    3. Type 10: Return the global `LOG_BUFFER_SIZE`.
+    1. **Type 3**: 
+          1. Acquire the lock to read from global `LOG`.
+          2. Calculate the size to write using `min(len, log.len())`.
+          3. Write to user buffer using `copy_to_user_slice`.
+          4. Return the written size.
+    2. **Type 5**: Acquire the lock and set `LOG` to `None`. 
+    3. **Type 10**: Return the global `LOG_BUFFER_SIZE`.
 4. `handle_syscall` converts the result into the Linux convention and return it.
 
 ### Implementation Septs
 1. Add `0x74` arm in `src/arch/arm64/exceptions/syscall.rs (line 437)` to make `handle_syscall` knows how to handle it.
 2. Implement `src/kernel/syslog.rs`
-  - `record_syscall(nr)` for recording the syscall.
-  - `sys_syslog(type, buf, len)` to handle each type.
-  - `syscall_name(nr)` for resolving from syscall number to name.
+    1. `record_syscall(nr)` for recording the syscall.
+    2. `sys_syslog(type, buf, len)` to handle each type.
+    3. `syscall_name(nr)` for resolving from syscall number to name.
 3. Add recording logic at `src/arch/arm64/exceptions/syscall.rs (line 650 - 653)`
 
+### Screenshot
+![Level 3 Screenshot](./attachment/level_3.png)
 
 
 

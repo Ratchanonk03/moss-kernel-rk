@@ -1,0 +1,44 @@
+warning: feature `core_intrinsics` is declared but not used
+ --> src/main.rs:7:12
+  |
+7 | #![feature(core_intrinsics)]
+  |            ^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_features)]` (part of `#[warn(unused)]`) on by default
+
+warning: `moss` (bin "moss") generated 1 warning
+    Finished `release` profile [optimized] target(s) in 0.13s
+warning: the following packages contain code that will be rejected by a future version of Rust: memchr v2.8.0
+note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
+     Running `/Users/ratchanonkhongsawi/Desktop/CMKL/3rd/S2/OS/assessment/02/moss-kernel-rk/scripts/qemu_runner.py target/aarch64-unknown-none-softfloat/release/moss --init /bin/ash`
+[    0.000000] arch::arm64::boot::memory: Adding memory region from FDT Px40000000 (0x80000000 bytes)
+[    0.000000] arch::arm64::boot::memory: Reserving kernel text Px40080000 - Px4119e000
+[    0.000000] arch::arm64::boot::memory: Reserving FDT Px68000000 (0x100000 bytes)
+[    0.000000] arch::arm64::boot::memory: Reserving initrd 0x48000000 - 0x68000000
+[    0.000000] libkernel::memory::allocators::phys: Buddy allocator initialized. Managing 524288 pages, 379904 free.
+[    0.000000] drivers::fs::dev: devfs initialized
+[    0.000000] drivers::interrupts::arm_gic_v3: ARM GICv3 found: dist @ <0x8000000, 0x10000>, rdist @ <0x80a0000, 0xf60000> (stride=0x20000)
+[    0.000000] drivers::interrupts::arm_gic_v3: GICv3: Redistributor for core 0 (MPIDR=0x80000000) is awake.
+[    0.000000] drivers::interrupts::arm_gic_v3: GICv3: CPU interface for core 0 enabled.
+[    0.000000] interrupts: Setting device intc@8000000 as the interrupt root
+[    0.000000] interrupts: Device timer claimed interrupt: Ppi(14)
+[    0.002098] interrupts: Device pl011@9000000 claimed interrupt: Spi(1)
+[    0.005038] libkernel::sync::per_cpu: Setup 20 per_cpu objects.
+[    0.006104] interrupts: Device CPU Messenger claimed interrupt: Ipi(0)
+[    0.006316] arch::arm64::proc::vdso: VDSO mapped to: 0xffff810000000000 (0x1000 bytes)
+[    0.021240] drivers::fs::proc: procfs initialized
+[    0.021714] drivers::fs::sys: sysfs initialized
+[    0.029352] drivers::interrupts::arm_gic_v3: GICv3: Redistributor for core 1 (MPIDR=0x80000001) is awake.
+[    0.029606] drivers::interrupts::arm_gic_v3: GICv3: CPU interface for core 1 enabled.
+[    0.029894] arch::arm64::boot::secondary: CPU 1 online.
+[    0.030240] drivers::interrupts::arm_gic_v3: GICv3: Redistributor for core 2 (MPIDR=0x80000002) is awake.
+[    0.030420] drivers::interrupts::arm_gic_v3: GICv3: CPU interface for core 2 enabled.
+[    0.030722] arch::arm64::boot::secondary: CPU 2 online.
+[    0.031318] drivers::interrupts::arm_gic_v3: GICv3: Redistributor for core 3 (MPIDR=0x80000003) is awake.
+[    0.031562] drivers::interrupts::arm_gic_v3: GICv3: CPU interface for core 3 enabled.
+[    0.031776] arch::arm64::boot::secondary: CPU 3 online.
+[    0.032028] arch::arm64::boot: ===============================
+[    0.032194] arch::arm64::boot: Student ID: 01323032 | Git Hash: 1394ddb
+[    0.032286] arch::arm64::boot: ===============================
+/ # [6ne[Jexit
+[   39.39109262] moss: Kernel panicked at src/process/exit.rs:19:9: Attempted to kill init
