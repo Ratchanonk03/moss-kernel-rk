@@ -191,4 +191,4 @@ RR outperformed EEVDF in all measured tests. These workloads are CPU-bound, so l
 
 For RR, a longer quantum, such as 100 ms, produces fewer context switches therefore achieved the best average results in these tests. However the tradeoff is responsiveness as a new runnable task may have to wait longer before receiving CPU time. In the other hand, a shorter quantum produces more context switches and overhead, but gives runnable tasks more frequent opportunities to execute.
 
-In theory, EEVDF is more suitable for interactive or mixed workloads because it uses a shorter time slice (4 ms in this implementation) and considers runtime and lag when selecting tasks. This can improve fairness and response time, although it may increase context-switch overhead.
+In theory, EEVDF is preferable for workloads where responsiveness and fairness matter because it considers each task’s virtual runtime, lag, and virtual deadline when selecting the next task. This can improve fair CPU sharing and reduce response time for latency-sensitive tasks, although more frequent preemption may increase context-switch overhead.
