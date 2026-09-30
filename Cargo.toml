@@ -49,7 +49,7 @@ default = ["smp"]
 # Support for Symmetric Multiprocessing
 smp = []
 sched-rr = []
-
+log_shed = []
 
 [profile.release]
 strip = true

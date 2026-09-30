@@ -5,3 +5,4 @@ pub mod power;
 pub mod rand;
 pub mod sysinfo;
 pub mod uname;
+pub mod syslog;

@@ -159,7 +159,11 @@ impl RRScheduler {
                     TaskState::Finished => {
                         if !task.is_idle_task() {
                             self.stats.task_finished(current_time, task.created_at);
-                            self.stats.log_stats("RR", Some(ROUND_ROBIN_QUANTUM.as_millis()));
+
+                            #[cfg(feature = "log_shed")]
+                            {
+                                self.stats.log_stats("RR", Some(ROUND_ROBIN_QUANTUM.as_millis()));
+                            }
                         }
                         // Finished task: do not requeue it.
                     }

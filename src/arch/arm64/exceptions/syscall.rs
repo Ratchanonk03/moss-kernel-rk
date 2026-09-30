@@ -46,6 +46,7 @@ use crate::{
         },
     },
     kernel::{
+        syslog::sys_syslog,
         hostname::sys_sethostname, power::sys_reboot, rand::sys_getrandom, sysinfo::sys_sysinfo,
         uname::sys_uname,
     },
@@ -433,6 +434,7 @@ pub async fn handle_syscall() {
             )
             .await
         }
+        0x74 => sys_syslog(arg1 as i32, TUA::from_value(arg2 as _), arg3 as usize).await,
         0x75 => {
             sys_ptrace(
                 arg1 as _,
@@ -645,6 +647,10 @@ pub async fn handle_syscall() {
         Ok(v) => v as isize,
         Err(e) => kern_err_to_syscall(e),
     };
+
+    if nr != 0x74 {
+        crate::kernel::syslog::record_syscall(nr);
+    }
 
     current_task().ctx.user_mut().x[0] = ret_val.cast_unsigned() as u64;
     ptrace_stop(TracePoint::SyscallExit).await;

@@ -392,7 +392,11 @@ impl SchedState {
                 if old_task.state.lock_save_irq().is_finished() {
                     if !old_task.is_idle_task() {
                         self.stats.task_finished(now_inst, old_task.created_at);
-                        self.stats.log_stats("EEVDF", None);
+
+                        #[cfg(feature = "log_shed")]
+                        {
+                            self.stats.log_stats("EEVDF", None);
+                        }
                     }
                 } else {
                     self.wait_q.insert(old_task.descriptor(), old_task);
