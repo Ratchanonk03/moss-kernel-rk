@@ -1,0 +1,194 @@
+# Level 2 comparison 
+
+## test 1: 16 equal-length CPU-bound tasks
+```
+fn test_sched_cpu_benchmark() {
+    const TASKS: usize = 16;
+    const WORK_ITERS: u64 = 5_000_000;
+
+    let gate = Arc::new(Barrier::new(TASKS + 1));
+    let mut handles = Vec::with_capacity(TASKS);
+
+    for task_id in 0..TASKS {
+        let gate = Arc::clone(&gate);
+
+        handles.push(thread::spawn(move || {
+            // All tasks become runnable together.
+            gate.wait();
+
+            // Equal CPU-bound work for every task.
+            let mut value = task_id as u64 + 1;
+            for _ in 0..WORK_ITERS {
+                value = value
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1);
+                black_box(value);
+            }
+        }));
+    }
+
+    // Release all 16 tasks onto the one-core run queue.
+    gate.wait();
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+}
+```
+### Task Description
+Sixteen equal-length CPU-bound tasks arrive simultaneously on a single CPU core. 
+Each task executes 5,000,000 iterations with each iterations do wrapping integer multiply by large number and add 1.
+
+### Result
+
+| Policy | Quantum | Avg. waiting time | Avg. completion time | Context switches|
+|--------|---------|-------------------|----------------------|-----------------|
+| EEVDF  | N/A     | 6436134295 ns     | 7319592118 ns        | 1510            |
+| RR     | 1 ms    | 6520786881 ns     | 7450753118 ns        | 5857            |
+| RR     | 10 ms   | 6301454765 ns     | 7144383704 ns        | 615             |
+| RR     | 100 ms  | 6230352410 ns     | 7055896174 ns        | 99              |
+
+## Test 2: Long Task Followed by Short Tasks
+
+```
+fn test_sched_mixed_benchmark() {
+    const LONG_ITERS: u64 = 50_000_000;
+    const SHORT_TASKS: usize = 15;
+    const SHORT_ITERS: u64 = 500_000;
+
+    let long_started = Arc::new(Barrier::new(2));
+    let started = Arc::clone(&long_started);
+
+    let long = thread::spawn(move || {
+        started.wait();
+
+        let mut value = 1_u64;
+        for _ in 0..LONG_ITERS {
+            value = value
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1);
+            black_box(value);
+        }
+    });
+
+    // Let the long CPU-bound thread start running first.
+    long_started.wait();
+    thread::sleep(std::time::Duration::from_millis(20));
+
+    let gate = Arc::new(Barrier::new(SHORT_TASKS + 1));
+    let mut handles = Vec::with_capacity(SHORT_TASKS);
+
+    for id in 0..SHORT_TASKS {
+        let gate = Arc::clone(&gate);
+
+        handles.push(thread::spawn(move || {
+            gate.wait();
+
+            let mut value = id as u64 + 1;
+            for _ in 0..SHORT_ITERS {
+                value = value
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1);
+                black_box(value);
+            }
+        }));
+    }
+
+    // Fifteen short CPU-bound threads arrive while the long thread runs.
+    gate.wait();
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+    long.join().unwrap();
+}
+```
+
+### Description
+One long CPU-bound task starts first. After 20 ms, 15 short CPU-bound tasks arrive together. 
+The long task runs 50,000,000 iterations, while each short task runs 500,000 iterations.
+Each iterations do wrapping integer multiply by large number and add 1.
+
+### Result
+
+| Policy | Quantum | Avg. waiting time | Avg. completion time | Context switches|
+|--------|---------|-------------------|----------------------|-----------------|
+| EEVDF  | N/A     | 681290707 ns      | 1292130646 ns        | 177             |
+| RR     | 1 ms    | 654948996 ns      | 1293840293 ns        | 661             |
+| RR     | 10 ms   | 625726823 ns      | 1230209057 ns        | 95              |
+| RR     | 100 ms  | 552872115 ns      | 1098852233 ns        | 42              |
+
+## Test 3:
+
+```
+fn test_sched_interactive_benchmark() {
+    const SHORT_TASKS: usize = 15;
+    const LONG_ITERS: u64 = 100_000_000;
+    const SHORT_ITERS: u64 = 500_000;
+
+    let gate = Arc::new(Barrier::new(SHORT_TASKS + 2));
+    let mut handles = Vec::with_capacity(SHORT_TASKS + 1);
+
+    // Long CPU-bound thread starts immediately.
+    {
+        let gate = Arc::clone(&gate);
+        handles.push(thread::spawn(move || {
+            gate.wait();
+
+            let mut value = 1_u64;
+            for _ in 0..LONG_ITERS {
+                value = value
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1);
+                black_box(value);
+            }
+        }));
+    }
+
+    // Short threads wake while the long thread is executing.
+    for id in 0..SHORT_TASKS {
+        let gate = Arc::clone(&gate);
+        handles.push(thread::spawn(move || {
+            gate.wait();
+            thread::sleep(std::time::Duration::from_millis(20));
+
+            let mut value = id as u64 + 1;
+            for _ in 0..SHORT_ITERS {
+                value = value
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1);
+                black_box(value);
+            }
+        }));
+    }
+
+    gate.wait();
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+}
+```
+
+### Description
+One long CPU-bound task and 15 short tasks start together.
+The short tasks sleep for 20 ms to simulate i/o, then wake and execute 500,000 iterations each while the long task continues running for 100,000,000 iterations.
+Each iterations do wrapping integer multiply by large number and add 1.
+
+
+### Result
+
+| Policy | Quantum | Avg. waiting time | Avg. completion time | Context switches|
+|--------|---------|-------------------|----------------------|-----------------|
+| EEVDF  | N/A     | 736608350 ns      | 2061238940 ns        | 220             |
+| RR     | 1 ms    | 729460061 ns      | 2063079645 ns        | 739             |
+| RR     | 10 ms   | 725912702 ns      | 1999293705 ns        | 118             |
+| RR     | 100 ms  | 517711350 ns      | 1785833118 ns        | 52              |
+
+## Conclusion
+
+RR outperformed EEVDF in all measured tests. These workloads are CPU-bound, so lower context-switch overhead has a strong effect on average waiting time and completion time. The averages also combine long and short tasks, which can hide the response delay experienced by short tasks.
+
+For RR, a longer quantum, such as 100 ms, produces fewer context switches therefore achieved the best average results in these tests. However the tradeoff is responsiveness as a new runnable task may have to wait longer before receiving CPU time. In the other hand, a shorter quantum produces more context switches and overhead, but gives runnable tasks more frequent opportunities to execute.
+
+In theory, EEVDF is more suitable for interactive or mixed workloads because it uses a shorter time slice (4 ms in this implementation) and considers runtime and lag when selecting tasks. This can improve fairness and response time, although it may increase context-switch overhead.

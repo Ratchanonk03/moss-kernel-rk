@@ -9,3 +9,5 @@ inventory = "0.3"
 libc = "0.2"
 parking_lot = "0.12"
 
+[features]
+sched-bench = []

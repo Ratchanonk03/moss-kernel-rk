@@ -1,19 +1,33 @@
    Compiling moss v0.1.0 (/Users/ratchanonkhongsawi/Desktop/CMKL/3rd/S2/OS/assessment/02/moss-kernel-rk)
+warning: unused import: `AtomicU64`
+  --> src/sched/mod.rs:14:26
+   |
+14 | use core::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+   |                          ^^^^^^^^^
+   |
+   = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
 warning: unused import: `super::SCHED_STATE`
  --> src/sched/waker.rs:8:5
   |
 8 | use super::SCHED_STATE;
   |     ^^^^^^^^^^^^^^^^^^
-  |
-  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: variant `PutTask` is never constructed
+  --> src/interrupts/cpu_messenger.rs:26:5
+   |
+25 | pub enum Message {
+   |          ------- variant in this enum
+26 |     PutTask(Box<OwnedTask>),
+   |     ^^^^^^^
+   |
+   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
 warning: constant `DEFAULT_TIME_SLICE` is never used
   --> src/sched/mod.rs:83:7
    |
 83 | const DEFAULT_TIME_SLICE: Duration = Duration::from_millis(4);
    |       ^^^^^^^^^^^^^^^^^^
-   |
-   = note: `#[warn(dead_code)]` (part of `#[warn(unused)]`) on by default
 
 warning: constant `VT_FIXED_SHIFT` is never used
   --> src/sched/mod.rs:88:11
@@ -73,12 +87,12 @@ warning: fields `run_q`, `wait_q`, `vclock`, `last_update`, `force_resched`, and
     |     ^^^^^
 
 warning: methods `update_global_least_tasked_cpu_info`, `advance_vclock`, `insert_into_runq`, `wakeup`, and `do_schedule` are never used
-   --> src/sched/mod.rs:238:8
+   --> src/sched/mod.rs:288:8
     |
 224 | impl SchedState {
     | --------------- methods in this implementation
 ...
-238 |     fn update_global_least_tasked_cpu_info(&self) {
+288 |     fn update_global_least_tasked_cpu_info(&self) {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
 ...
 297 |     fn advance_vclock(&mut self, now_inst: Instant) {
@@ -120,22 +134,22 @@ warning: multiple methods are never used
  44 |     pub fn switch_tasks(&mut self, next_task: TaskDescriptor, now_inst: Instant) -> SwitchResult {
     |            ^^^^^^^^^^^^
 ...
- 87 |     pub fn weight(&self) -> u64 {
+ 91 |     pub fn weight(&self) -> u64 {
     |            ^^^^^^
 ...
- 92 |     pub fn current(&self) -> Option<&Box<SchedulableTask>> {
+ 96 |     pub fn current(&self) -> Option<&Box<SchedulableTask>> {
     |            ^^^^^^^
 ...
- 96 |     pub fn current_mut(&mut self) -> Option<&mut Box<SchedulableTask>> {
+100 |     pub fn current_mut(&mut self) -> Option<&mut Box<SchedulableTask>> {
     |            ^^^^^^^^^^^
 ...
-100 |     fn fallback_current_or_idle(&self) -> TaskDescriptor {
+104 |     fn fallback_current_or_idle(&self) -> TaskDescriptor {
     |        ^^^^^^^^^^^^^^^^^^^^^^^^
 ...
-113 |     pub fn find_next_runnable_desc(&self, vclock: u128) -> TaskDescriptor {
+117 |     pub fn find_next_runnable_desc(&self, vclock: u128) -> TaskDescriptor {
     |            ^^^^^^^^^^^^^^^^^^^^^^^
 ...
-157 |     pub fn enqueue_task(&mut self, new_task: Box<SchedulableTask>) {
+161 |     pub fn enqueue_task(&mut self, new_task: Box<SchedulableTask>) {
     |            ^^^^^^^^^^^^
 
 warning: multiple fields are never read
@@ -197,11 +211,11 @@ warning: feature `core_intrinsics` is declared but not used
   |
   = note: `#[warn(unused_features)]` (part of `#[warn(unused)]`) on by default
 
-warning: `moss` (bin "moss") generated 16 warnings (run `cargo fix --bin "moss" -p moss` to apply 1 suggestion)
-    Finished `release` profile [optimized] target(s) in 9.46s
+warning: `moss` (bin "moss") generated 18 warnings (run `cargo fix --bin "moss" -p moss` to apply 2 suggestions)
+    Finished `release` profile [optimized] target(s) in 9.54s
 warning: the following packages contain code that will be rejected by a future version of Rust: memchr v2.8.0
 note: to see what the problems were, use the option `--future-incompat-report`, or run `cargo report future-incompatibilities --id 1`
-     Running `/Users/ratchanonkhongsawi/Desktop/CMKL/3rd/S2/OS/assessment/02/moss-kernel-rk/scripts/qemu_runner.py target/aarch64-unknown-none-softfloat/release/moss --init /bin/usertest --smp 1`
+     Running `/Users/ratchanonkhongsawi/Desktop/CMKL/3rd/S2/OS/assessment/02/moss-kernel-rk/scripts/qemu_runner.py /private/tmp/moss-target/aarch64-unknown-none-softfloat/release/moss --init /bin/usertest --smp 1`
 [    0.000000] arch::arm64::boot::memory: Adding memory region from FDT Px40000000 (0x80000000 bytes)
 [    0.000000] arch::arm64::boot::memory: Reserving kernel text Px40080000 - Px4119e000
 [    0.000000] arch::arm64::boot::memory: Reserving FDT Px68000000 (0x100000 bytes)
@@ -213,134 +227,33 @@ note: to see what the problems were, use the option `--future-incompat-report`, 
 [    0.000000] drivers::interrupts::arm_gic_v3: GICv3: CPU interface for core 0 enabled.
 [    0.000000] interrupts: Setting device intc@8000000 as the interrupt root
 [    0.000000] interrupts: Device timer claimed interrupt: Ppi(14)
-[    0.001944] interrupts: Device pl011@9000000 claimed interrupt: Spi(1)
-[    0.004737] libkernel::sync::per_cpu: Setup 6 per_cpu objects.
-[    0.005715] interrupts: Device CPU Messenger claimed interrupt: Ipi(0)
-[    0.005916] arch::arm64::proc::vdso: VDSO mapped to: 0xffff810000000000 (0x1000 bytes)
-[    0.019779] drivers::fs::proc: procfs initialized
-[    0.020256] drivers::fs::sys: sysfs initialized
-[    0.027208] arch::arm64::boot: ===============================
-[    0.027296] arch::arm64::boot: Student ID: 01323032 | Git Hash: 4b5eb6f
-[    0.027390] arch::arm64::boot: ===============================
+[    0.001715] interrupts: Device pl011@9000000 claimed interrupt: Spi(1)
+[    0.004272] libkernel::sync::per_cpu: Setup 5 per_cpu objects.
+[    0.005141] interrupts: Device CPU Messenger claimed interrupt: Ipi(0)
+[    0.005350] arch::arm64::proc::vdso: VDSO mapped to: 0xffff810000000000 (0x1000 bytes)
+[    0.027335] drivers::fs::proc: procfs initialized
+[    0.027949] drivers::fs::sys: sysfs initialized
+[    0.034990] arch::arm64::boot: ===============================
+[    0.035140] arch::arm64::boot: Student ID: 01323032 | Git Hash: 7ac48e2
+[    0.035250] arch::arm64::boot: ===============================
 Running userspace tests ...
-usertest::futex::test_futex_bitset ...[    0.170101] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 1 | Avg wait time: 2663008 ns | Avg completion time: 110400000 ns | Context switches: 6
-[    0.280388] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 2 | Avg wait time: 1808016 ns | Avg completion time: 108180504 ns | Context switches: 11
-[    0.388395] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 3 | Avg wait time: 1335344 ns | Avg completion time: 107653002 ns | Context switches: 16
-[    0.390090] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 4 | Avg wait time: 1022008 ns | Avg completion time: 165138252 ns | Context switches: 17
+usertest::test_sched_interactive_benchmark ...[    0.922123] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 1 | Avg wait time: 11906903072 ns | Avg completion time: 835018992 ns | Context switches: 704
+[    0.926574] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 2 | Avg wait time: 5991496528 ns | Avg completion time: 841354992 ns | Context switches: 708
+[    0.932882] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 3 | Avg wait time: 4025797354 ns | Avg completion time: 845437658 ns | Context switches: 713
+[    0.937353] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 4 | Avg wait time: 3037816264 ns | Avg completion time: 848520244 ns | Context switches: 717
+[    0.939107] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 5 | Avg wait time: 2437359811 ns | Avg completion time: 851254393 ns | Context switches: 719
+[    0.941511] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 6 | Avg wait time: 2036539842 ns | Avg completion time: 852801661 ns | Context switches: 721
+[    0.944893] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 7 | Avg wait time: 1752152866 ns | Avg completion time: 854345709 ns | Context switches: 724
+[    0.949450] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 8 | Avg wait time: 1540055256 ns | Avg completion time: 856037372 ns | Context switches: 728
+[    0.949943] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 9 | Avg wait time: 1370325338 ns | Avg completion time: 857280330 ns | Context switches: 729
+[    0.950638] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 10 | Avg wait time: 1234410004 ns | Avg completion time: 858310196 ns | Context switches: 730
+[    0.953079] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 11 | Avg wait time: 1123960821 ns | Avg completion time: 859279633 ns | Context switches: 732
+[    0.953780] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 12 | Avg wait time: 1031038002 ns | Avg completion time: 860123414 ns | Context switches: 733
+[    0.955850] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 13 | Avg wait time: 952876771 ns | Avg completion time: 860873228 ns | Context switches: 735
+[    0.956586] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 14 | Avg wait time: 885307573 ns | Avg completion time: 861546140 ns | Context switches: 736
+[    0.957222] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 15 | Avg wait time: 826571136 ns | Avg completion time: 862334197 ns | Context switches: 737
+[   11.11134662] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 16 | Avg wait time: 775039440 ns | Avg completion time: 1499783685 ns | Context switches: 738
+[   11.11140352] sched::stats: CPU 0: Policy: RR | Quantum: 1 ms | Completed tasks: 17 | Avg wait time: 729460061 ns | Avg completion time: 2063079645 ns | Context switches: 739
 [32m OK[0m
-usertest::futex::test_futex ...[    0.408693] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 5 | Avg wait time: 950006 ns | Avg completion time: 132398000 ns | Context switches: 19
-[32m OK[0m
-usertest::fs::test_rust_dir ...[    0.421940] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 6 | Avg wait time: 822672 ns | Avg completion time: 112086501 ns | Context switches: 21
-[32m OK[0m
-usertest::fs::test_rust_file ...[    0.436528] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 7 | Avg wait time: 729005 ns | Avg completion time: 97830857 ns | Context switches: 23
-[32m OK[0m
-usertest::fs::test_statx ...[    0.443440] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 8 | Avg wait time: 657880 ns | Avg completion time: 86209250 ns | Context switches: 25
-[32m OK[0m
-usertest::fs::test_utimens ...[    0.450532] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 9 | Avg wait time: 607893 ns | Avg completion time: 77181000 ns | Context switches: 27
-[32m OK[0m
-usertest::fs::test_ftruncate ...[    0.457391] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 10 | Avg wait time: 561804 ns | Avg completion time: 69939300 ns | Context switches: 29
-[32m OK[0m
-usertest::fs::test_truncate ...[    0.465174] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 11 | Avg wait time: 524731 ns | Avg completion time: 64100181 ns | Context switches: 31
-[32m OK[0m
-usertest::fs::test_rename ...[    0.473446] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 12 | Avg wait time: 493420 ns | Avg completion time: 59275833 ns | Context switches: 33
-[32m OK[0m
-usertest::fs::test_symlink ...[    0.489397] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 13 | Avg wait time: 467926 ns | Avg completion time: 55731768 ns | Context switches: 35
-[32m OK[0m
-usertest::fs::test_readdir ...[    0.499421] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 14 | Avg wait time: 445788 ns | Avg completion time: 52312499 ns | Context switches: 37
-[32m OK[0m
-usertest::fs::test_link ...[    0.596566] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 15 | Avg wait time: 3176402 ns | Avg completion time: 54140066 ns | Context switches: 41
-[32m OK[0m
-usertest::fs::test_write ...[    0.603509] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 16 | Avg wait time: 2988503 ns | Avg completion time: 51043937 ns | Context switches: 43
-[32m OK[0m
-usertest::fs::test_read ...[    0.628560] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 17 | Avg wait time: 3541708 ns | Avg completion time: 48982058 ns | Context switches: 47
-[32m OK[0m
-usertest::fs::test_fchown ...[    0.638428] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 18 | Avg wait time: 3355669 ns | Avg completion time: 46619499 ns | Context switches: 49
-[32m OK[0m
-usertest::fs::test_chown ...[    0.646898] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 19 | Avg wait time: 3187739 ns | Avg completion time: 44482789 ns | Context switches: 51
-[32m OK[0m
-usertest::fs::test_fchmod ...[    0.653499] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 20 | Avg wait time: 3036053 ns | Avg completion time: 42477349 ns | Context switches: 53
-[32m OK[0m
-usertest::fs::test_chmod ...[    0.659936] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 21 | Avg wait time: 2899384 ns | Avg completion time: 40664713 ns | Context switches: 55
-[32m OK[0m
-usertest::fs::test_chroot ...[    0.664796] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 22 | Avg wait time: 2773957 ns | Avg completion time: 38948317 ns | Context switches: 57
-[32m OK[0m
-usertest::fs::test_fchdir ...[    0.670389] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 23 | Avg wait time: 2661090 ns | Avg completion time: 37409739 ns | Context switches: 59
-[32m OK[0m
-usertest::fs::test_chdir ...[    0.675955] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 24 | Avg wait time: 2557962 ns | Avg completion time: 35991250 ns | Context switches: 61
-[32m OK[0m
-usertest::fs::test_opendir ...[    0.681152] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 25 | Avg wait time: 2462403 ns | Avg completion time: 34676520 ns | Context switches: 63
-[32m OK[0m
-usertest::test_clock_sleep ...[    0.789048] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 26 | Avg wait time: 2373734 ns | Avg completion time: 37409884 ns | Context switches: 67
-[32m OK[0m
-usertest::test_mincore ...[    0.794537] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 27 | Avg wait time: 2295410 ns | Avg completion time: 36096185 ns | Context switches: 69
-[32m OK[0m
-usertest::test_thread_with_name ...[    0.807913] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 28 | Avg wait time: 2238681 ns | Avg completion time: 34930536 ns | Context switches: 72
-[    0.809324] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 29 | Avg wait time: 2164727 ns | Avg completion time: 34133862 ns | Context switches: 73
-[32m OK[0m
-usertest::test_parking_lot_mutex_timeout ...[    0.925636] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 30 | Avg wait time: 2130502 ns | Avg completion time: 36527566 ns | Context switches: 78
-[    0.927097] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 31 | Avg wait time: 2064486 ns | Avg completion time: 39064032 ns | Context switches: 79
-[32m OK[0m
-usertest::test_rust_mutex ...[    0.958994] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 32 | Avg wait time: 8304285 ns | Avg completion time: 38084343 ns | Context switches: 114
-[    0.959849] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 33 | Avg wait time: 8130215 ns | Avg completion time: 37577393 ns | Context switches: 115
-[    0.960806] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 34 | Avg wait time: 7981444 ns | Avg completion time: 37104264 ns | Context switches: 116
-[    0.961526] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 35 | Avg wait time: 7868089 ns | Avg completion time: 36573714 ns | Context switches: 117
-[    0.962277] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 36 | Avg wait time: 7780697 ns | Avg completion time: 36078639 ns | Context switches: 118
-[    0.962981] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 37 | Avg wait time: 7718084 ns | Avg completion time: 35616027 ns | Context switches: 119
-[    0.963669] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 38 | Avg wait time: 7677055 ns | Avg completion time: 35184790 ns | Context switches: 120
-[    0.964521] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 39 | Avg wait time: 7655592 ns | Avg completion time: 34787846 ns | Context switches: 121
-[    0.965269] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 40 | Avg wait time: 7656277 ns | Avg completion time: 34421400 ns | Context switches: 122
-[    0.966083] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 41 | Avg wait time: 7674612 ns | Avg completion time: 34087000 ns | Context switches: 123
-[    0.966814] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 42 | Avg wait time: 7711240 ns | Avg completion time: 33780358 ns | Context switches: 124
-[    0.967628] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 43 | Avg wait time: 7762909 ns | Avg completion time: 33496814 ns | Context switches: 125
-[    0.968419] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 44 | Avg wait time: 7830480 ns | Avg completion time: 33238296 ns | Context switches: 126
-[    0.969109] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 45 | Avg wait time: 7912402 ns | Avg completion time: 33001267 ns | Context switches: 127
-[    0.969843] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 46 | Avg wait time: 8005589 ns | Avg completion time: 32785500 ns | Context switches: 128
-[    0.970588] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 47 | Avg wait time: 8110258 ns | Avg completion time: 32589873 ns | Context switches: 129
-[    0.971496] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 48 | Avg wait time: 8223836 ns | Avg completion time: 32416376 ns | Context switches: 130
-[    0.972208] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 49 | Avg wait time: 8351104 ns | Avg completion time: 32257939 ns | Context switches: 131
-[    0.972906] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 50 | Avg wait time: 8487383 ns | Avg completion time: 32113720 ns | Context switches: 132
-[    0.973572] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 51 | Avg wait time: 8631865 ns | Avg completion time: 31983196 ns | Context switches: 133
-[    0.974315] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 52 | Avg wait time: 8783002 ns | Avg completion time: 31867308 ns | Context switches: 134
-[    0.974974] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 53 | Avg wait time: 8942153 ns | Avg completion time: 31763887 ns | Context switches: 135
-[    0.975708] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 54 | Avg wait time: 9107465 ns | Avg completion time: 31673259 ns | Context switches: 136
-[    0.976415] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 55 | Avg wait time: 9279566 ns | Avg completion time: 31594109 ns | Context switches: 137
-[    0.977180] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 56 | Avg wait time: 9458002 ns | Avg completion time: 31527375 ns | Context switches: 138
-[    0.978115] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 57 | Avg wait time: 9643458 ns | Avg completion time: 31475088 ns | Context switches: 139
-[    0.978841] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 58 | Avg wait time: 9838485 ns | Avg completion time: 31433328 ns | Context switches: 140
-[    0.979573] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 59 | Avg wait time: 10039104 ns | Avg completion time: 31401068 ns | Context switches: 141
-[    0.980323] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 60 | Avg wait time: 10245102 ns | Avg completion time: 31378734 ns | Context switches: 142
-[    0.981062] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 61 | Avg wait time: 10456609 ns | Avg completion time: 31365394 ns | Context switches: 143
-[    0.981804] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 62 | Avg wait time: 10673115 ns | Avg completion time: 31360726 ns | Context switches: 144
-[    0.982631] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 63 | Avg wait time: 10894494 ns | Avg completion time: 31364365 ns | Context switches: 145
-[    0.987966] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 64 | Avg wait time: 11082112 ns | Avg completion time: 31785219 ns | Context switches: 146
-[32m OK[0m
-usertest::test_rust_thread ...[    0.997426] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 65 | Avg wait time: 10922218 ns | Avg completion time: 31337016 ns | Context switches: 149
-[    0.998580] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 66 | Avg wait time: 10757487 ns | Avg completion time: 30981561 ns | Context switches: 150
-[32m OK[0m
-usertest::test_fork ...[    1.1003700] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 67 | Avg wait time: 10603644 ns | Avg completion time: 30528791 ns | Context switches: 153
-[    1.1004267] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 68 | Avg wait time: 10447825 ns | Avg completion time: 30131868 ns | Context switches: 154
-[32m OK[0m
-usertest::test_sync ...[    1.1007483] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 69 | Avg wait time: 10298828 ns | Avg completion time: 29712275 ns | Context switches: 156
-[32m OK[0m
-usertest::signals::test_interruptible_read_pipe ...[    2.2021257] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 70 | Avg wait time: 10170973 ns | Avg completion time: 43707329 ns | Context switches: 161
-[    2.2028698] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 71 | Avg wait time: 10035255 ns | Avg completion time: 57444817 ns | Context switches: 162
-[32m OK[0m
-usertest::signals::rust_stack_overflow ...[    2.2152383] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 72 | Avg wait time: 9912891 ns | Avg completion time: 58180153 ns | Context switches: 165
-[    2.2160067] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 73 | Avg wait time: 9777482 ns | Avg completion time: 59087000 ns | Context switches: 166
-[32m OK[0m
-usertest::signals::test_segfault_write ...[    2.2291102] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 74 | Avg wait time: 9652651 ns | Avg completion time: 59922730 ns | Context switches: 169
-[    2.2404059] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 75 | Avg wait time: 9527109 ns | Avg completion time: 60583214 ns | Context switches: 171
-[    2.2406509] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 76 | Avg wait time: 9401910 ns | Avg completion time: 62938264 ns | Context switches: 172
-[32m OK[0m
-usertest::signals::test_segfault_read ...[    2.2411236] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 77 | Avg wait time: 9283742 ns | Avg completion time: 62130935 ns | Context switches: 175
-[    2.2413433] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 78 | Avg wait time: 9166976 ns | Avg completion time: 61343193 ns | Context switches: 177
-[    2.2414087] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 79 | Avg wait time: 9051103 ns | Avg completion time: 60635089 ns | Context switches: 178
-[32m OK[0m
-usertest::signals::test_interruptible_waitpid ...[    3.3430793] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 80 | Avg wait time: 8954014 ns | Avg completion time: 72533500 ns | Context switches: 185
-[    3.3433029] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 81 | Avg wait time: 8843891 ns | Avg completion time: 84191655 ns | Context switches: 186
-[32m OK[0m
-usertest::signals::test_interruptible_nanosleep ...[    4.4451713] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 82 | Avg wait time: 8747672 ns | Avg completion time: 95459732 ns | Context switches: 191
-[    4.4458068] sched::stats: CPU 0: Policy: RR | Quantum: 10 ms | Completed tasks: 83 | Avg wait time: 8647170 ns | Avg completion time: 106588386 ns | Context switches: 192
-[32m OK[0m
-All tests passed in 4414 ms
-[    4.4465950] moss: Kernel panicked at src/process/exit.rs:19:9: Attempted to kill init
+All tests passed in 11089 ms
+[   11.11150525] moss: Kernel panicked at src/process/exit.rs:19:9: Attempted to kill init

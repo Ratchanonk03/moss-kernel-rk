@@ -25,7 +25,7 @@ benchmark:
     if [ ! -f moss.img ]; then
     just create-image
     fi
-    cargo run --release -- --init /bin/usertest --smp 1 2>&1 | tee benchmark.log
+    cargo run --release --no-default-features -- --init /bin/usertest --smp 1 2>&1 | tee benchmark.log
 
 benchmark-rr:
     #!/usr/bin/env sh
@@ -33,7 +33,7 @@ benchmark-rr:
     if [ ! -f moss.img ]; then
     just create-image
     fi
-    cargo run --release --features sched-rr  -- --init /bin/usertest --smp 1 2>&1 | tee benchmark-rr.log
+    cargo run --release --no-default-features --features sched-rr  -- --init /bin/usertest --smp 1 2>&1 | tee benchmark-rr.log
 
 test-unit:
     #!/usr/bin/env sh

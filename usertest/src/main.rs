@@ -3,6 +3,7 @@ use std::{
     io::{Write, stdout},
     sync::{Arc, Barrier, Mutex},
     thread,
+    hint::black_box,
 };
 
 mod fs;
@@ -194,6 +195,145 @@ fn test_mincore() {
 
 register_test!(test_mincore);
 
+fn test_sched_cpu_benchmark() {
+    const TASKS: usize = 16;
+    const WORK_ITERS: u64 = 5_000_000;
+
+    let gate = Arc::new(Barrier::new(TASKS + 1));
+    let mut handles = Vec::with_capacity(TASKS);
+
+    for task_id in 0..TASKS {
+        let gate = Arc::clone(&gate);
+
+        handles.push(thread::spawn(move || {
+            // All tasks become runnable together.
+            gate.wait();
+
+            // Equal CPU-bound work for every task.
+            let mut value = task_id as u64 + 1;
+            for _ in 0..WORK_ITERS {
+                value = value
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1);
+                black_box(value);
+            }
+        }));
+    }
+
+    // Release all 16 tasks onto the one-core run queue.
+    gate.wait();
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+}
+
+register_test!(test_sched_cpu_benchmark);
+
+fn test_sched_mixed_benchmark() {
+    const LONG_ITERS: u64 = 50_000_000;
+    const SHORT_TASKS: usize = 15;
+    const SHORT_ITERS: u64 = 500_000;
+
+    let long_started = Arc::new(Barrier::new(2));
+    let started = Arc::clone(&long_started);
+
+    let long = thread::spawn(move || {
+        started.wait();
+
+        let mut value = 1_u64;
+        for _ in 0..LONG_ITERS {
+            value = value
+                .wrapping_mul(6_364_136_223_846_793_005)
+                .wrapping_add(1);
+            black_box(value);
+        }
+    });
+
+    // Let the long CPU-bound thread start running first.
+    long_started.wait();
+    thread::sleep(std::time::Duration::from_millis(20));
+
+    let gate = Arc::new(Barrier::new(SHORT_TASKS + 1));
+    let mut handles = Vec::with_capacity(SHORT_TASKS);
+
+    for id in 0..SHORT_TASKS {
+        let gate = Arc::clone(&gate);
+
+        handles.push(thread::spawn(move || {
+            gate.wait();
+
+            let mut value = id as u64 + 1;
+            for _ in 0..SHORT_ITERS {
+                value = value
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1);
+                black_box(value);
+            }
+        }));
+    }
+
+    // Fifteen short CPU-bound threads arrive while the long thread runs.
+    gate.wait();
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+    long.join().unwrap();
+}
+
+register_test!(test_sched_mixed_benchmark);
+
+fn test_sched_interactive_benchmark() {
+    const SHORT_TASKS: usize = 15;
+    const LONG_ITERS: u64 = 100_000_000;
+    const SHORT_ITERS: u64 = 500_000;
+
+    let gate = Arc::new(Barrier::new(SHORT_TASKS + 2));
+    let mut handles = Vec::with_capacity(SHORT_TASKS + 1);
+
+    // Long CPU-bound thread starts immediately.
+    {
+        let gate = Arc::clone(&gate);
+        handles.push(thread::spawn(move || {
+            gate.wait();
+
+            let mut value = 1_u64;
+            for _ in 0..LONG_ITERS {
+                value = value
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1);
+                black_box(value);
+            }
+        }));
+    }
+
+    // Short threads wake while the long thread is executing.
+    for id in 0..SHORT_TASKS {
+        let gate = Arc::clone(&gate);
+        handles.push(thread::spawn(move || {
+            gate.wait();
+            thread::sleep(std::time::Duration::from_millis(20));
+
+            let mut value = id as u64 + 1;
+            for _ in 0..SHORT_ITERS {
+                value = value
+                    .wrapping_mul(6_364_136_223_846_793_005)
+                    .wrapping_add(1);
+                black_box(value);
+            }
+        }));
+    }
+
+    gate.wait();
+
+    for handle in handles {
+        handle.join().unwrap();
+    }
+}
+
+register_test!(test_sched_interactive_benchmark);
+
 fn run_test(test_fn: fn()) -> Result<(), i32> {
     // Fork a new process to run the test
     unsafe {
@@ -232,7 +372,13 @@ fn main() {
     println!("Running userspace tests ...");
     let start = std::time::Instant::now();
     let mut failures = 0;
+    
+    let only_test = "usertest::test_sched_interactive_benchmark";
     for test in inventory::iter::<Test> {
+        if test.test_text != only_test {
+            continue;
+        }
+
         print!("{} ...", test.test_text);
         let _ = stdout().flush();
         match run_test(test.test_fn) {

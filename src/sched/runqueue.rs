@@ -59,13 +59,17 @@ impl RunQueue {
         new_task.about_to_execute(now_inst);
 
         // Perform the swap.
-        if let Some(old_task) = self.running_task.replace(new_task) {
+        if let Some(mut old_task) = self.running_task.replace(new_task) {
             let state = *old_task.state.lock_save_irq();
 
             match state {
                 TaskState::Running | TaskState::Runnable => {
                     // Update state to strictly Runnable
                     *old_task.state.lock_save_irq() = TaskState::Runnable;
+                    // A new ready-queue wait interval starts when a preempted
+                    // task is requeued.  Without this reset, scheduler stats
+                    // repeatedly count time from the task's original enqueue.
+                    old_task.ready_since = now_inst;
 
                     self.queue.insert(old_task.descriptor(), old_task);
 

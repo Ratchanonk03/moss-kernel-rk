@@ -26,7 +26,7 @@ per_cpu_private! {
     pub(super) static RR_STATE: RRScheduler = RRScheduler::new;
 }
 
-pub const ROUND_ROBIN_QUANTUM: Duration = Duration::from_millis(10);
+pub const ROUND_ROBIN_QUANTUM: Duration = Duration::from_millis(1);
 
 pub struct RRTask {
     pub task: Box<OwnedTask>,
