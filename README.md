@@ -1,11 +1,11 @@
 # Assessment
 
 ## Run Instructions
-`just run`: to build and run with EEVDF policy.
-`just run-rr`: to build and run with RR policy.
-`just benchmark`: to build and benchmark EEVDF policy.
-`just benchmark-rr`: to build and benchmark RR policy.
-`just verify`: to verify toolchain and booting.
+- `just run`: to build and run with EEVDF policy.
+- `just run-rr`: to build and run with RR policy.
+- `just benchmark`: to build and benchmark EEVDF policy.
+- `just benchmark-rr`: to build and benchmark RR policy.
+- `just verify`: to verify toolchain and booting.
 ## Level 1
 
 ### Implementation Steps
