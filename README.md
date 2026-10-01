@@ -1,8 +1,41 @@
 # Assessment
 
+## Run Instructions
+`just run`: to build and run with EEVDF policy.
+`just run-rr`: to build and run with RR policy.
+`benchmark`: to build and benchmark EEVDF policy.
+`benchmark-rr`: to build and benchmark RR policy.
+
 ## Level 1
 
+### Implementation Steps
+1. Implement `make_boot_banner()` to prepare boot banner for logging. `moss-kernel-rk/build.rs (line 6 - 16)` 
+2. Add logging during boot. `src/arch/arm64/boot/mod.rs (line 146 - 148)`
+3. Implement `verify_toolchain.sh` to verify toolchain `scripts/verify_toolchain.sh`
+4. Add `Just` blueprint to verify tool chain. `Justfile (line 49 - 50)`
+
+### Boot Output
+**See `boot.log`**
+
+### Screenshot
+![Level 1 Screenshot](./attachment/level_1.png)
+
 ## Level 2
+
+### Schedule Policy Comparison
+**See RESULTS.md**
+
+### Implementation Steps
+1. Add `ROUND_ROBIN_QUANTUM` to represent each process allocated time slice.  `src/sched/sched_rr.rs (line 29)`
+2. Implement `RRTask` class to keep track an RR specific metrics. `src/sched/sched_rr.rs (line 31 - 69)`
+3. Implement `RRScheduler` to handel Round Robin policy. `src/sched/sched_rr.rs (line 71 - 218)`
+4. Add `#[cfg(feature = "sched-rr")]` to select which policy to build. `src/sched/mod.rs (line 31 - 32, 119 - 130, 169 - 172, 183 - 186)`
+5. Add `SchedulerStats` to keep track of each policy statistic. `src/sched/stats.rs`
+6. Add tests in `moss-kernel-rk/usertest/src/main.rs (line 198 - 369)`
+7. Add `Just` blueprint to run rr and benchmark. `Justfile (line 14 - 36)`
+
+### Screenshot
+![Level 2 Screenshot](./attachment/level_2.png)
 
 ## Level 3
 
@@ -33,9 +66,21 @@
 ## Level 4
 
 ### Decision
+For this task, I used the SLAB allocator through the kernel's global allocator. SLAB is suitable for this allocation pattern because the ring buffer is a relatively small, fixed-size allocation, and SLAB is designed to efficiently manage small allocations and reuse freed memory.
 
-### Implmetaion Steps
+A Buddy allocator would be less suitable because it allocates memory in power-of-two-sized blocks. A request may therefore be rounded up to a larger block than necessary, causing internal fragmentation and wasting memory.
 
+A bump allocator would also be unsuitable for a long-lived logging system because it only moves its allocation pointer forward and generally cannot reclaim individual allocations. Repeated allocation would therefore consume memory without reusing previously allocated space.
+
+### Impletion Steps
+1. Add `LogRecord` to store each syscall number and timestamp in `src/arch/arm64/exceptions/syscall.rs (line 22 - 28)`.
+2. Add Add a dynamically allocated `RingBuffer` to store the log records in `src/arch/arm64/exceptions/syscall.rs (line 37 - 115)`.
+3. Adjust `sys_syslog(...)` to us the new buffer in `src/arch/arm64/exceptions/syscall.rs (line 117 - 169)`.
+
+### Screenshot
+![Level 4 Screenshot](./attachment/level_4.png)
+
+The syscall entries may look similar because running dmesg itself generates additional system calls. Since the buffer only stores 16 records, these new calls quickly overwrite older entries.
 
 
 # moss

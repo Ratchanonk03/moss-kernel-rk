@@ -373,9 +373,9 @@ fn main() {
     let start = std::time::Instant::now();
     let mut failures = 0;
     
-    let only_test = "usertest::test_sched_interactive_benchmark";
+    let only_test = ["usertest::test_sched_interactive_benchmark", "usertest::test_sched_mixed_benchmark", "usertest::test_sched_cpu_benchmark"];
     for test in inventory::iter::<Test> {
-        if test.test_text != only_test {
+        if !only_test.contains(&test.name) {
             continue;
         }
 
