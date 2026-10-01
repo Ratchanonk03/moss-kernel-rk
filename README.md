@@ -3,9 +3,9 @@
 ## Run Instructions
 `just run`: to build and run with EEVDF policy.
 `just run-rr`: to build and run with RR policy.
-`benchmark`: to build and benchmark EEVDF policy.
-`benchmark-rr`: to build and benchmark RR policy.
-
+`just benchmark`: to build and benchmark EEVDF policy.
+`just benchmark-rr`: to build and benchmark RR policy.
+`just verify`: to verify toolchain and booting.
 ## Level 1
 
 ### Implementation Steps
@@ -73,9 +73,9 @@ A Buddy allocator would be less suitable because it allocates memory in power-of
 A bump allocator would also be unsuitable for a long-lived logging system because it only moves its allocation pointer forward and generally cannot reclaim individual allocations. Repeated allocation would therefore consume memory without reusing previously allocated space.
 
 ### Impletion Steps
-1. Add `LogRecord` to store each syscall number and timestamp in `src/arch/arm64/exceptions/syscall.rs (line 22 - 28)`.
-2. Add Add a dynamically allocated `RingBuffer` to store the log records in `src/arch/arm64/exceptions/syscall.rs (line 37 - 115)`.
-3. Adjust `sys_syslog(...)` to us the new buffer in `src/arch/arm64/exceptions/syscall.rs (line 117 - 169)`.
+1. Add `LogRecord` to store each syscall number and timestamp in `src/kernel/syslog.rs (line 22 - 28)`.
+2. Add Add a dynamically allocated `RingBuffer` to store the log records in `src/kernel/syslog.rs (line 37 - 115)`.
+3. Adjust `sys_syslog(...)` to us the new buffer in `src/kernel/syslog.rs(line 117 - 169)`.
 
 ### Screenshot
 ![Level 4 Screenshot](./attachment/level_4.png)
