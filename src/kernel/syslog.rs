@@ -1,43 +1,158 @@
 use libkernel::{
-    error::{KernelError, Result},
-    memory::address::TUA,
+    error::{KernelError, Result}, 
+    memory::address::TUA, 
+    sync::once_lock::OnceLock,
 };
-use crate::memory::uaccess::copy_to_user_slice;
+
 
 use alloc::{
-    format, 
     string::String,
-    };
+    boxed::Box,
+};
+use core::fmt::Write;
+use core::time::Duration;
 
+use crate::drivers::timer::now;
+use crate::arch::ArchImpl;
 use crate::sync::SpinLock;
+use crate::memory::uaccess::copy_to_user_slice;
 
-const LOG_BUFFER_SIZE: usize = 128;
+const LOG_CAPACITY: usize = 16;
 
-static LOG: SpinLock<Option<String>> = SpinLock::new(None);
+#[derive(Clone, Copy)]
+struct LogRecord {
+    timestamp: u64,
+    number: u32,
+}
+
+const EMPTY_RECORD: LogRecord = LogRecord { timestamp: 0, number: 0 };
+
+struct RingBuffer {
+    records: Box<[LogRecord; LOG_CAPACITY]>,
+    next: usize,
+    len: usize,
+    dropped: usize,
+}
+
+impl RingBuffer {
+    pub fn new() -> Self {
+            Self {
+                records: Box::new([EMPTY_RECORD; LOG_CAPACITY]),
+                next: 0,
+                len: 0,
+                dropped: 0,
+            }
+        }
+
+    pub fn push(&mut self, record: LogRecord) {
+        if self.len == LOG_CAPACITY {
+            self.dropped += 1;
+        } else {
+            self.len += 1;
+        }
+
+        self.records[self.next] = record;
+        self.next = (self.next + 1) % LOG_CAPACITY;
+    }
+
+    pub fn get(&self, index: usize) -> Option<&LogRecord> {
+        if index >= self.len {
+            return None;
+        }
+
+        // If not full, oldest starts at 0.
+        // If full, `next` points to the oldest record.
+        let oldest = if self.len == LOG_CAPACITY {
+            self.next
+        } 
+        else {
+            0
+        };
+
+        let real_index = (oldest + index) % LOG_CAPACITY;
+
+        Some(&self.records[real_index])
+    }
+
+    pub fn render(&self) -> String {
+        let mut output = String::new();
+
+        writeln!(
+            &mut output,
+            "{} earlier records dropped",
+            self.dropped
+        )
+        .unwrap();
+
+        for i in 0..self.len {
+            if let Some(record) = self.get(i) {
+                let seconds = record.timestamp / 1_000_000;
+                let micros = record.timestamp % 1_000_000;
+
+                writeln!(
+                    &mut output,
+                    "[ {}.{:06}] syscall {}",
+                    seconds,
+                    micros,
+                    record.number,
+                )
+                .unwrap();
+            }
+        }
+
+        output
+    }
+
+    pub fn clear(&mut self) {
+        self.next = 0;
+        self.len = 0;
+        self.dropped = 0;
+    }
+
+}
+
+static LOG_BUFFER: OnceLock<SpinLock<RingBuffer>, ArchImpl> = OnceLock::new();
 
 pub fn record_syscall(nr: u32) {
-    let name = syscall_name(nr);
-    *LOG.lock_save_irq() = Some(format!("syscall {nr} ({name})\n"));
+    let current: Duration = now().expect("system timer not running").into();
+    let current = current.as_micros() as u64;
+    let log_buffer = LOG_BUFFER.get_or_init(|| SpinLock::new(RingBuffer::new()));
+    log_buffer.lock_save_irq().push(LogRecord { timestamp: current, number: nr });
 }
 
 
 pub async fn sys_syslog(type_: i32, buf: TUA<u8>, len: usize) -> Result<usize> {
+    let log_buffer = LOG_BUFFER.get_or_init(|| SpinLock::new(RingBuffer::new()));
+
     match type_ {
         3 => {
-            let log = LOG.lock_save_irq().clone().unwrap_or_default();
-            let written = core::cmp::min(len, log.len());
-            copy_to_user_slice(&log.as_bytes()[..written], buf.to_untyped()).await?;
+            let output = {
+                let guard = log_buffer.lock_save_irq();
+                guard.render()
+            };
+
+            let bytes = output.as_bytes();
+            let written = core::cmp::min(len, bytes.len());
+
+            copy_to_user_slice(&bytes[..written],buf.to_untyped()).await?;
             Ok(written)
         }
         5 => {
-            *LOG.lock_save_irq() = None;
+            log_buffer.lock_save_irq().clear();
             Ok(0)
         }
-        10 => Ok(LOG_BUFFER_SIZE),
+        10 => {
+            let size = {
+                let guard = log_buffer.lock_save_irq();
+                guard.render().len()
+            };
+            Ok(size)
+        }
         _ => Err(KernelError::InvalidValue), // becomes -EINVAL
     }
 }
 
+#[allow(dead_code)]
 fn syscall_name(nr: u32) -> &'static str {
     match nr {
         0x05 => "setxattr",
