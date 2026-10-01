@@ -91,10 +91,11 @@ impl RingBuffer {
 
                 writeln!(
                     &mut output,
-                    "[ {}.{:06}] syscall {}",
+                    "[ {}.{:06}] syscall {} ({})",
                     seconds,
                     micros,
                     record.number,
+                    syscall_name(record.number)
                 )
                 .unwrap();
             }
@@ -135,6 +136,21 @@ pub async fn sys_syslog(type_: i32, buf: TUA<u8>, len: usize) -> Result<usize> {
             let written = core::cmp::min(len, bytes.len());
 
             copy_to_user_slice(&bytes[..written],buf.to_untyped()).await?;
+            Ok(written)
+        }
+        4 => {
+            let output = {
+                let guard = log_buffer.lock_save_irq();
+                guard.render()
+            };
+
+            let bytes = output.as_bytes();
+            let written = core::cmp::min(len, bytes.len());
+
+            copy_to_user_slice(&bytes[..written],buf.to_untyped()).await?;
+
+            log_buffer.lock_save_irq().clear();
+            
             Ok(written)
         }
         5 => {

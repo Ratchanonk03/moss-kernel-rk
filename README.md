@@ -19,7 +19,7 @@
     3. **Type 10**: Return the global `LOG_BUFFER_SIZE`.
 4. `handle_syscall` converts the result into the Linux convention and return it.
 
-### Implementation Septs
+### Implementation Steps
 1. Add `0x74` arm in `src/arch/arm64/exceptions/syscall.rs (line 437)` to make `handle_syscall` knows how to handle it.
 2. Implement `src/kernel/syslog.rs`
     1. `record_syscall(nr)` for recording the syscall.
@@ -30,7 +30,11 @@
 ### Screenshot
 ![Level 3 Screenshot](./attachment/level_3.png)
 
+## Level 4
 
+### Decision
+
+### Implmetaion Steps
 
 
 
